@@ -1,5 +1,5 @@
 const express = require('express');
-const { PermissionMiddlewareCreator } = require('forest-express-sequelize');
+const { PermissionMiddlewareCreator, RecordCreator } = require('forest-express-sequelize');
 const { transactions } = require('../models');
 
 const router = express.Router();
@@ -12,7 +12,13 @@ const permissionMiddlewareCreator = new PermissionMiddlewareCreator('transaction
 // Create a Transaction
 router.post('/transactions', permissionMiddlewareCreator.create(), (request, response, next) => {
   // Learn what this route does here: https://docs.forestadmin.com/documentation/v/v6/reference-guide/routes/default-routes#create-a-record
-  next();
+  //next();
+  const recordCreator = new RecordCreator(transactions);
+  recordCreator.deserialize(request.body)
+    .then(recordToCreate => recordCreator.create(recordToCreate))
+    .then(record => recordCreator.serialize(record))
+    .then(recordSerialized => response.send(recordSerialized))
+    .catch(next);  
 });
 
 // Update a Transaction
@@ -30,12 +36,14 @@ router.delete('/transactions/:recordId', permissionMiddlewareCreator.delete(), (
 // Get a list of Transactions
 router.get('/transactions', permissionMiddlewareCreator.list(), (request, response, next) => {
   // Learn what this route does here: https://docs.forestadmin.com/documentation/v/v6/reference-guide/routes/default-routes#get-a-list-of-records
+  request.query.searchExtended = '1';
   next();
 });
 
 // Get a number of Transactions
 router.get('/transactions/count', permissionMiddlewareCreator.list(), (request, response, next) => {
   // Learn what this route does here: https://docs.forestadmin.com/documentation/v/v6/reference-guide/routes/default-routes#get-a-number-of-records
+  request.query.searchExtended = '1';
   next();
 });
 
